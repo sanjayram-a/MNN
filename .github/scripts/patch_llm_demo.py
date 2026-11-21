@@ -32,14 +32,12 @@ setup = anchor + """#ifdef LLM_SUPPORT_AUDIO
 #endif
 """
 
-call = "        llm->response(messages);\n"
+call = "        llm->response(messages);\n        auto assistant_str = context->generate_str;\n"
 synth = call + """        {
-            auto saved_generate_str = context->generate_str;
 #ifdef LLM_SUPPORT_AUDIO
             llm->generateWavform();
             std::cout << "\\n[AUDIO_SAVED]" << std::flush;
 #endif
-            context->generate_str = saved_generate_str;
         }
 """
 
