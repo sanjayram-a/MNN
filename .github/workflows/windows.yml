@@ -18,8 +18,9 @@ jobs:
 
       - name: Verify patch
         run: |
-          Select-String -Path transformers\llm\engine\demo\llm_demo.cpp -Pattern "generateWavform|AUDIO_SAVED"
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $m = Select-String -Path transformers\llm\engine\demo\llm_demo.cpp -Pattern "generateWavform|AUDIO_SAVED"
+          if (-not $m) { exit 1 }
+          $m | ForEach-Object { $_.Line }
 
       - name: Build MNN with Omni and Audio
         run: |
