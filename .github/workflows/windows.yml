@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - '.github/workflows/windows.yml'
+      - '.github/scripts/patch_llm_demo.py'
 
 jobs:
   build_omni:
@@ -12,20 +13,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build MNN with Omni & Audio
+      - name: Enable voice output in chat mode
+        run: python .github/scripts/patch_llm_demo.py
+
+      - name: Verify patch
+        run: |
+          Select-String -Path transformers\llm\engine\demo\llm_demo.cpp -Pattern "generateWavform|AUDIO_SAVED"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Build MNN with Omni and Audio
         run: |
           mkdir build
           cd build
-          cmake .. -DMNN_BUILD_LLM=ON -DMNN_BUILD_LLM_OMNI=ON -DMNN_OPENCL=ON -DMNN_LOW_MEMORY=ON -DMNN_SUPPORT_TRANSFORMER_FUSE=ON
+          cmake .. -DMNN_BUILD_LLM=ON -DMNN_BUILD_LLM_OMNI=ON -DMNN_OPENCL=ON -DMNN_LOW_MEMORY=ON -DMNN_SUPPORT_TRANSFORMER_FUSE=ON -DMNN_BUILD_SHARED_LIBS=ON
           cmake --build . --config Release -j4
 
-      - name: Package Binaries
+      - name: Package binaries
         run: |
           mkdir dist
           Copy-Item build\Release\*.exe dist\
           Copy-Item build\Release\*.dll dist\
 
-      - name: Upload Downloadable Zip
+      - name: Upload downloadable zip
         uses: actions/upload-artifact@v4
         with:
           name: mnn-omni-windows
