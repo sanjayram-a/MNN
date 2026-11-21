@@ -18,7 +18,7 @@ jobs:
 
       - name: Verify patch
         run: |
-          $m = Select-String -Path transformers\llm\engine\demo\llm_demo.cpp -Pattern "generateWavform|AUDIO_SAVED"
+          $m = Select-String -Path transformers\llm\engine\demo\llm_demo.cpp,transformers\llm\engine\src\omni.cpp -Pattern "generateWavform|AUDIO_SAVED|force synchronous vocoder"
           if (-not $m) { exit 1 }
           $m | ForEach-Object { $_.Line }
 

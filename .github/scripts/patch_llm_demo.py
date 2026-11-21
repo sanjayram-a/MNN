@@ -52,3 +52,19 @@ if code.count(call) != 1:
 code = code.replace(anchor, setup, 1).replace(call, synth, 1)
 path.write_text(code, encoding="utf-8")
 print("Patched", path)
+
+# The async token2wav worker aborts after a hard 60s wait. On CPU under memory
+# pressure that timeout fires and the turn produces no wav at all. The
+# synchronous path is the same one used on GPU backends and has no such cap.
+omni = Path("transformers/llm/engine/src/omni.cpp")
+ocode = omni.read_text(encoding="utf-8")
+marker = "// patched: force synchronous vocoder"
+if marker not in ocode:
+    old = "    mAsyncToken2Wav = (module_runtime.get() != mRuntimeManager.get());\n"
+    new = "    mAsyncToken2Wav = false; " + marker + " for reliable file output\n"
+    if ocode.count(old) != 1:
+        sys.exit("ERROR: mAsyncToken2Wav anchor not found exactly once")
+    omni.write_text(ocode.replace(old, new, 1), encoding="utf-8")
+    print("Patched", omni)
+else:
+    print("omni.cpp already patched; nothing to do")
